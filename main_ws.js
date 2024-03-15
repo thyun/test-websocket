@@ -28,13 +28,13 @@ var time = {};
 
 // ["CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\u0000"]
 
-const numConnections = 2;
+const numConnections = 500;
 var wsClient = null;
 var wsClientList = [];
 var chatCount = 0;
 
 function connect(username) {
-	var url = "http://localhost:8080/chat?chatRoomId=1";
+	var url = "http://192.168.10.109:8080/chat?chatRoomId=1";
     //var socket = new SockJS('/chat');
     var sock = new SockJS(url);
 
@@ -44,7 +44,13 @@ function connect(username) {
 	};
 
 	sock.onmessage = function(e) {
-		console.log(`Message from connection ${username}: ${e.data}`);
+		// console.log(`Message from connection ${username}: ${e.data}`);
+		if (e.data.startsWith("CONNECTED")) {
+			sendString(sock, `SUBSCRIBE\nid:${username}\ndestination:/sub/1\n\n\u0000`)
+		} else if (e.data.startsWith("MESSAGE")) {
+			processMessage(sock, username, e)
+		}
+		
 	};
 
 	sock.onclose = function() {
@@ -86,9 +92,7 @@ for (let i = 0; i < numConnections; i++) {
 }
 
 
-
-
-
+///////////////////////////////////////////////////////////////////
 // Function to send STOMP frame
 function sendString(sock, frame) {
 	sock.send(frame);
@@ -96,6 +100,59 @@ function sendString(sock, frame) {
 function sendFrame(sock, frame) {
 	sock.send(JSON.stringify(frame));
 }
+function processMessage(sock, username, e) {
+	//console.log(`Message from connection ${username}: ${e.data}`);
+	var result = parseStompMessage(e.data)
+	var body = result[1].trim()
+	//console.log(body)
+	//console.log(body.length)
+
+	var jo = JSON.parse(body)
+	switch (jo["type"]) {
+		case "CHAT":
+			console.log(body);
+			break;
+		case "ROOM":
+			break;
+		default:
+			console.log("Unknown type");
+
+	}
+
+}
+
+// Function to parse STOMP message
+function parseStompMessage(message) {
+    var lines = message.split('\n');
+    var headers = {};
+    var body = '';
+    
+    var inBody = false;
+    
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        
+        if (!inBody && line.trim() === '') {
+            inBody = true;
+            continue;
+        }
+        
+        if (inBody) {
+            body += line + '\n';
+        } else {
+            var headerParts = line.split(':');
+            var headerName = headerParts[0];
+            var headerValue = headerParts.slice(1).join(':').trim();
+            headers[headerName] = headerValue;
+        }
+    }
+    
+	body = body.slice(0,-2)	// Remove trailing not-white character
+    //console.log('Headers:', headers);
+    //console.log('Body:', body);
+	return [headers, body]
+}
+
 
 
 
