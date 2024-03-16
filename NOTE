@@ -1,2 +1,2 @@
-node main_ws.js p_0
+node main_sockjs.js - 250개 이상 connection 생성하면 실패
 

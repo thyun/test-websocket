@@ -1,0 +1,2 @@
+# How to run - 5000명까지 성공
+k6 run k6-ws.js

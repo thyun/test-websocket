@@ -28,7 +28,7 @@ var time = {};
 
 // ["CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\u0000"]
 
-const numConnections = 250;
+const numConnections = 1;
 var wsClient = null;
 var wsClientList = [];
 var chatCount = 0;
@@ -103,10 +103,8 @@ function delay(time) {
 }
 
 async function sleepFor(msecs) {
-	console.log('시작');
 	await delay(msecs);
-	console.log('100ms가 지났습니다.');
-  }
+}
 
 // Send STOMP frame
 function sendString(sock, frame) {
