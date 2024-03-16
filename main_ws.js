@@ -28,13 +28,13 @@ var time = {};
 
 // ["CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\u0000"]
 
-const numConnections = 500;
+const numConnections = 250;
 var wsClient = null;
 var wsClientList = [];
 var chatCount = 0;
 
 function connect(username) {
-	var url = "http://192.168.10.109:8080/chat?chatRoomId=1";
+	var url = "http://192.168.10.100:8080/chat?chatRoomId=1";
     //var socket = new SockJS('/chat');
     var sock = new SockJS(url);
 
@@ -51,6 +51,10 @@ function connect(username) {
 			processMessage(sock, username, e)
 		}
 		
+	};
+
+	sock.onerror = function(e) {
+		console.error(`Connection ${username} error: `, e);
 	};
 
 	sock.onclose = function() {
@@ -89,17 +93,30 @@ function connect(username) {
 for (let i = 0; i < numConnections; i++) {
 	username = 'user ' + i
     wsClientList.push(connect(username));
+	sleepFor(100);
 }
 
 
 ///////////////////////////////////////////////////////////////////
-// Function to send STOMP frame
+function delay(time) {
+	return new Promise(resolve => setTimeout(resolve, time));
+}
+
+async function sleepFor(msecs) {
+	console.log('시작');
+	await delay(msecs);
+	console.log('100ms가 지났습니다.');
+  }
+
+// Send STOMP frame
 function sendString(sock, frame) {
 	sock.send(frame);
 }
 function sendFrame(sock, frame) {
 	sock.send(JSON.stringify(frame));
 }
+
+// Process message
 function processMessage(sock, username, e) {
 	//console.log(`Message from connection ${username}: ${e.data}`);
 	var result = parseStompMessage(e.data)
@@ -110,7 +127,8 @@ function processMessage(sock, username, e) {
 	var jo = JSON.parse(body)
 	switch (jo["type"]) {
 		case "CHAT":
-			console.log(body);
+			chatCount++
+			console.log("count=", chatCount, "chat=", body);
 			break;
 		case "ROOM":
 			break;
@@ -121,7 +139,7 @@ function processMessage(sock, username, e) {
 
 }
 
-// Function to parse STOMP message
+// Parse STOMP message
 function parseStompMessage(message) {
     var lines = message.split('\n');
     var headers = {};
@@ -152,6 +170,7 @@ function parseStompMessage(message) {
     //console.log('Body:', body);
 	return [headers, body]
 }
+
 
 
 
